@@ -1,6 +1,5 @@
 package com.jairorr.practicegym.presentation.transition
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -21,6 +20,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -54,26 +54,17 @@ fun CardContent(
         }
     }
 
+    val mapOptionsAnswer by viewModel.mapOptionsSelected.collectAsState()
+
     LaunchedEffect(key1 = selectedIndex) {
         lazyListState.animateScrollToItemCenter(selectedIndex+1)
-        Log.d(
-            "CardContent::indexPassed",
-            "Visible index: ${firstVisibleItemIndex.value} ~ Selected index: $selectedIndex"
-        )
     }
 
     LaunchedEffect(key1 = firstVisibleItemIndex.value) {
-//        if(firstVisibleItemIndex.value + 1 != selectedIndex){
-//            changeIndex(firstVisibleItemIndex.value)
-//        }
         coroutineScope.launch {
             lazyListState.animateScrollToItemCenter(firstVisibleItemIndex.value+1)
         }
         viewModel.updatePosition(firstVisibleItemIndex.value)
-        Log.d(
-            "CardContent::firstVisibleItemIndex",
-            "Visible index: ${firstVisibleItemIndex.value} ~ Selected index: ${selectedIndex}"
-        )
     }
 
     LazyRow(
@@ -95,16 +86,25 @@ fun CardContent(
                     Text(text = item.subtitle, fontWeight = FontWeight.Bold, color = Color.Gray)
                     Text(text = item.question, fontStyle = FontStyle.Italic)
                     Column {
-                        item.options.forEachIndexed { i, option ->
-                            Row {
-                                RadioButton(selected = false, onClick = { })
-                                Text(text = option.description)
-                            }
+                        item.options.forEachIndexed { _, option ->
+                            RadioAnswer(
+                                option = option,
+                                isSelected = (mapOptionsAnswer[index]?.id == option.id),
+                                onSelect = { viewModel.markOption(index,option) }
+                            )
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RadioAnswer(option: Options, isSelected:Boolean, onSelect:()->Unit) {
+    Row {
+        RadioButton(selected = isSelected, onClick = { onSelect() })
+        Text(text = option.description)
     }
 }
 

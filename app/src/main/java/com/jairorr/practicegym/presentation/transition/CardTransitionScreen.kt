@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
@@ -33,15 +35,55 @@ import androidx.compose.ui.unit.dp
 fun CardTransitionScreen(modifier: Modifier = Modifier, viewModel: CardViewModel) {
     val currentPosition by viewModel.currentPosition.observeAsState(0)
     val currentProgress by viewModel.currentProgress.observeAsState(0.0f)
+    val optionsMarked by viewModel.mapOptionsSelected.collectAsState()
     val items by viewModel.listItems.collectAsState()
+    val isFormCompleted by viewModel.isFormCompleted.observeAsState(false)
+    val showButtons by viewModel.showButtons.observeAsState(false)
     Surface(modifier = modifier){
-        Column {
-            ProgressBarCard(currentProgress = currentProgress)
-            TitleCard()
+        if(isFormCompleted){
+            Column(verticalArrangement = Arrangement.Center) {
+                Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Form completed successfully")
+                Text(text = "Form completed successfully!", color = Color.Green, fontWeight = FontWeight.Bold)
+            }
+        }else {
+            Column {
+                ProgressBarCard(currentProgress = currentProgress)
+
+                TitleCard()
 //            CardContent(items = items, saveAnswer = {}, indexPassed = currentPosition,changeIndex = {newIndex -> viewModel.updatePosition(newIndex)})
-            CardContent(items = items, saveAnswer = {}, viewModel = viewModel)
-            ProgressIndicatorCard(totalItems = items.size, currentPosition = currentPosition, moveToPosition = { position -> viewModel.updatePosition(position) })
-            ArrowsNavigation(moveIntoArrow = { viewModel.moveIntoArrow(it) })
+                CardContent(items = items, saveAnswer = {}, viewModel = viewModel)
+
+                ProgressIndicatorCard(
+                    totalItems = items.size,
+                    currentPosition = currentPosition,
+                    moveToPosition = { position -> viewModel.updatePosition(position) })
+
+                ArrowsNavigation(moveIntoArrow = { viewModel.moveIntoArrow(it) })
+
+                if (showButtons) {
+                    RowButtons(
+                        onClear = { viewModel.onClear() },
+                        onSubmit = { viewModel.onSubmit() }
+                    )
+                }
+            }
+        }
+
+    }
+}
+
+@Composable
+fun RowButtons(modifier:Modifier = Modifier, onSubmit:()->Unit, onClear:()->Unit) {
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center){
+        FilledTonalButton(onClick = {
+            onSubmit()
+        }) {
+            Text(text = "Submit")
+        }
+        OutlinedButton(onClick = {
+            onClear()
+        }) {
+            Text(text = "Clear answers")
         }
     }
 }
@@ -81,7 +123,9 @@ fun ProgressIndicatorCard(modifier:Modifier = Modifier, totalItems: Int, current
 
 @Composable
 fun TitleCard(modifier: Modifier = Modifier) {
-    Row(modifier = modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalArrangement = Arrangement.Center){
+    Row(modifier = modifier
+        .fillMaxWidth()
+        .padding(vertical = 16.dp), horizontalArrangement = Arrangement.Center){
         Text("Card questions", fontStyle = FontStyle.Italic, fontWeight = FontWeight.Bold)
     }
 }
@@ -89,7 +133,9 @@ fun TitleCard(modifier: Modifier = Modifier) {
 @Composable
 fun ProgressBarCard(modifier:Modifier = Modifier,currentProgress: Float) {
     LinearProgressIndicator(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 8.dp),
         progress = currentProgress
     )
 }
